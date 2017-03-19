@@ -1,10 +1,8 @@
-
 """
 Molecular Dynamic (M.D) with tensor flow: This code demonstrate how to build molecular dynamic simulation using tensorflow. 
 TensorFlow is an open source software library for numerical computation using data flow graph,
 It mostly used for machine learning but can be used to run any system as that can be written as dataflow graph. The code involve building data flow graph for single simulation step of molecular dynamics.
 This basically mean building the molecular dynamic simulation using tensor operations only. This this simulation step graph in runned in a loop to create multistep molecular dynamic model. The particles location is plotted on screen in each step.
-
 The data flow graph of the M.D simulation involve the following steps:
 1) Calculate distance vector between every pair of particles in the system.
 2) Calculate force between every pair of particles in the system.
@@ -12,7 +10,6 @@ The data flow graph of the M.D simulation involve the following steps:
 4) Update particle's speed using accelerating.
 5) Update particles position using their new speed.
 6) Reduce speed of all particles by some factor to induce cooling effect.
-
 Input Parameters:
 InitPosition: Initial position of all particles in format [[x1,y1],[x2,y2],[x3,y3]...].
 InitVelocities: Initial velocities of all particles in format [[vx1,vy1],[vx2,vy2],[vx3,vy3]...].
@@ -21,7 +18,6 @@ m:Particle mass.
 CoolingRate: Increase/decrease the speed of all particles by factor to achieve cooling/heating effect.
 PeriodicBoundary: Tell the weather the system use periodic boundary.
 CellSize: If the system use periodic boundary condition what the cell size.
-
 Tensorflow graph parameters:
 x,v: Placeholders that contain the input locations and velocities of of particles.
 xnew,vnew: Output Particle's location and position in the end of the simulation step. 
@@ -57,15 +53,15 @@ if PeriodicBoundary: # If you use priodice boundaries this step calulate the loc
 else:# incase none priodic boundary conditions are used.
    expanded_x2 = tf.expand_dims(x, 1)# The new dimesnion is of undefine size and hypotetically each element in this dimennsion is the same as the original element  the size of the new dimension will be determined once this is used
 #-----------------------------------------------------------------------------------
-rx=tf.sub(expanded_x1,expanded_x2 )#Distance between every pair of particles in x in every dimension (dx,dy)
+rx=expanded_x1-expanded_x2 #Distance between every pair of particles in x in every dimension (dx,dy)
 rx2=tf.square(rx) # sqar distane for each particle pair in each dimension  (dx^2,dx^2)
 r2=tf.reduce_sum(rx2,2) # absolute squar distance between every pair of particles(dx^2+dx^2)
 r=tf.sqrt(r2) # absolute distance between every pair of particles
 
 r=tf.maximum(r,tf.ones_like(r)*0.02)# To avoid division by zero make min distance larger then 0 this add to prevent simulation explosion if particles get too closed
 F=-30/tf.pow(r,2)+10/tf.pow(r,3) # Force between pair of particles F=9/r^2-1/r^3 (attracion 9/r^2 and repulsion 1/r^3)
-Fx=tf.mul(rx,tf.expand_dims(F/r,2))# The forces per axis applied between each pair of particles we divide the force by r since rx is not normalize by distance between particles
-Accel=tf.scalar_mul(dt/m,Fx)# Acceleration resulted from forces between each pair is simply force between each pair divide by particle map and multiply by time of step
+Fx=rx*tf.expand_dims(F/r,2)# The forces per axis applied between each pair of particles we divide the force by r since rx is not normalize by distance between particles
+Accel=(dt/m)*Fx# Acceleration resulted from forces between each pair is simply force between each pair divide by particle map and multiply by time of step
 dv=tf.reduce_sum(Accel,0) ## or dim2? Sum velocity  changes for each particle in each step of the simulation
 vnew=(v+dv)*CoolingFactor# Update velocity for particle U=
 xnew=x+(vnew)*dt# Update position for each particles according to particle speed (avereged on new and previous speed)
